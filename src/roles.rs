@@ -22,7 +22,10 @@ pub struct RoleMeta {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct RoleRef {}
+pub struct RoleRef {
+    kind: String,
+    name: String,
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 #[allow(non_snake_case)]
