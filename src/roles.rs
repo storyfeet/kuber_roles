@@ -2,32 +2,32 @@ use err_tools::*;
 use serde_derive::*;
 //use std::io::Read;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KubeOut {
-    items: Vec<RoleItem>,
+    pub items: Vec<RoleItem>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[allow(non_snake_case)]
 pub struct RoleItem {
-    kind: String,
-    metadata: RoleMeta,
-    roleRef: RoleRef,
-    subjects: Option<Vec<RoleSubject>>,
+    pub kind: String,
+    pub metadata: RoleMeta,
+    pub roleRef: RoleRef,
+    pub subjects: Option<Vec<RoleSubject>>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RoleMeta {
     name: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RoleRef {
     kind: String,
     name: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[allow(non_snake_case)]
 pub struct RoleSubject {
     apiGroup: Option<String>,
@@ -53,4 +53,17 @@ pub fn get_roles() -> anyhow::Result<KubeOut> {
     let ko: KubeOut = serde_json::from_str(&s)?;
 
     Ok(ko)
+}
+
+impl RoleItem {
+    pub fn has_subject_name(&self, needle: &str) -> bool {
+        if let Some(sj) = &self.subjects {
+            for s in sj {
+                if s.name == needle {
+                    return true;
+                }
+            }
+        }
+        false
+    }
 }
