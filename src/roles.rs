@@ -30,9 +30,9 @@ pub struct RoleRef {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[allow(non_snake_case)]
 pub struct RoleSubject {
-    apiGroup: Option<String>,
-    kind: String,
-    name: String,
+    pub apiGroup: Option<String>,
+    pub kind: String,
+    pub name: String,
 }
 
 use std::process::Command;
@@ -57,9 +57,13 @@ pub fn get_roles() -> anyhow::Result<KubeOut> {
 
 impl RoleItem {
     pub fn has_subject_name(&self, needle: &str) -> bool {
+        self.has_subject_hit(|s| s.name.contains(needle))
+    }
+
+    pub fn has_subject_hit<F: Fn(&RoleSubject) -> bool>(&self, f: F) -> bool {
         if let Some(sj) = &self.subjects {
             for s in sj {
-                if s.name == needle {
+                if f(s) {
                     return true;
                 }
             }
