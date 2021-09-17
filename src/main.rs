@@ -16,6 +16,7 @@ pub struct RoleQuery {
     namex: Option<String>,
     output: Option<String>,
     kind: Option<String>,
+    sort: Option<String>,
 }
 
 #[get("/roles")]
@@ -32,7 +33,7 @@ async fn role_handle(
         .e_str("Could not build regex")
         .as_err_response()?;
 
-    let f_list: Vec<roles::SubjectItem> = dt
+    let mut f_list: Vec<roles::SubjectItem> = dt
         .lock()
         .ok()
         .e_str("could not lock data")
@@ -58,6 +59,16 @@ async fn role_handle(
         })
         .map(|i| i.clone())
         .collect();
+
+    match qi.sort.as_ref().map(String::as_str) {
+        Some("alpha") => {
+            f_list.sort_by(|a, b| a.name.cmp(&b.name));
+        }
+        Some("length") => {
+            f_list.sort_by(|a, b| a.name.len().cmp(&b.name.len()));
+        }
+        _ => {}
+    }
 
     let (res, ctype) = match qi.output.as_ref().map(String::as_str) {
         Some("yaml") => (
@@ -85,8 +96,9 @@ async fn index_form() -> &'static str {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let s = crate::roles::get_subjects().expect("Got Good result");
-    println!("Subjects === {:?} === Subjects", s);
     let dt = Arc::new(Mutex::new(s));
+
+    println!("serving on 8086");
 
     HttpServer::new(move || {
         App::new()

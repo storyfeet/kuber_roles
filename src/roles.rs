@@ -39,12 +39,21 @@ pub struct RoleSubject {
 use std::process::Command;
 
 pub fn get_subjects() -> anyhow::Result<Vec<SubjectItem>> {
-    get_roles().map(transpose)
+    let mut res = get_roles(["get", "clusterrolebinding", "-o", "json"]).map(transpose)?;
+
+    //Didn't have data to test assuming same as clusterrolebindings
+    let res2 = get_roles(["get", "rolebinding", "-o", "json"]).map(transpose)?;
+    res.extend(res2);
+    Ok(res)
 }
 
-pub fn get_roles() -> anyhow::Result<KubeOut> {
+pub fn get_roles<I, S>(args: I) -> anyhow::Result<KubeOut>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<std::ffi::OsStr>,
+{
     let output = Command::new("kubectl")
-        .args(["get", "clusterrolebinding", "-o", "json"])
+        .args(args)
         .output()
         .e_str("Could not run kubectl")?;
 
