@@ -1,5 +1,6 @@
 use err_tools::*;
 use serde_derive::*;
+use std::collections::BTreeMap;
 //use std::io::Read;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -36,6 +37,11 @@ pub struct RoleSubject {
 }
 
 use std::process::Command;
+
+pub fn get_subjects() -> anyhow::Result<Vec<SubjectItem>> {
+    get_roles().map(transpose)
+}
+
 pub fn get_roles() -> anyhow::Result<KubeOut> {
     let output = Command::new("kubectl")
         .args(["get", "clusterrolebinding", "-o", "json"])
@@ -55,19 +61,54 @@ pub fn get_roles() -> anyhow::Result<KubeOut> {
     Ok(ko)
 }
 
-impl RoleItem {
-    pub fn has_subject_name(&self, needle: &str) -> bool {
-        self.has_subject_hit(|s| s.name.contains(needle))
-    }
+//Transpose to
 
-    pub fn has_subject_hit<F: Fn(&RoleSubject) -> bool>(&self, f: F) -> bool {
-        if let Some(sj) = &self.subjects {
-            for s in sj {
-                if f(s) {
-                    return true;
+#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize)]
+pub struct SubjectItem {
+    pub name: String,
+    pub kind: String,
+    pub roles: Vec<String>,
+}
+
+#[derive(Debug, Eq, PartialEq, PartialOrd, Ord)]
+pub struct SubjectKey {
+    name: String,
+    kind: String,
+}
+
+#[derive(Debug)]
+pub struct SubjectVal {
+    roles: Vec<String>,
+}
+
+pub fn transpose(ko: KubeOut) -> Vec<SubjectItem> {
+    let mut map: BTreeMap<SubjectKey, SubjectVal> = BTreeMap::new();
+    for k in ko.items {
+        if let Some(sub) = k.subjects {
+            for s in sub {
+                let sk = SubjectKey {
+                    name: s.name,
+                    kind: s.kind,
+                };
+                match map.get_mut(&sk) {
+                    Some(v) => v.roles.push(k.metadata.name.clone()),
+                    _ => {
+                        map.insert(
+                            sk,
+                            SubjectVal {
+                                roles: vec![k.metadata.name.clone()],
+                            },
+                        );
+                    }
                 }
             }
         }
-        false
     }
+    map.into_iter()
+        .map(|(k, v)| SubjectItem {
+            name: k.name,
+            kind: k.kind,
+            roles: v.roles,
+        })
+        .collect()
 }

@@ -8,14 +8,14 @@ mod err;
 use err::*;
 mod roles;
 
-type AppData = Arc<Mutex<roles::KubeOut>>;
+type AppData = Arc<Mutex<Vec<roles::SubjectItem>>>;
 
 #[derive(Deserialize)]
 pub struct RoleQuery {
     name: Option<String>,
     namex: Option<String>,
-
     output: Option<String>,
+    kind: Option<String>,
 }
 
 #[get("/roles")]
@@ -32,21 +32,25 @@ async fn role_handle(
         .e_str("Could not build regex")
         .as_err_response()?;
 
-    let f_list: Vec<roles::RoleItem> = dt
+    let f_list: Vec<roles::SubjectItem> = dt
         .lock()
         .ok()
         .e_str("could not lock data")
         .as_err_response()?
-        .items
         .iter()
         .filter(|d| {
             if let Some(nq) = &qi.name {
-                if !d.has_subject_name(nq) {
+                if !d.name.contains(nq) {
                     return false;
                 }
             }
             if let Some(rg) = &name_reg {
-                if !d.has_subject_hit(|s| rg.is_match(&s.name)) {
+                if !rg.is_match(&d.name) {
+                    return false;
+                }
+            }
+            if let Some(kind) = &qi.kind {
+                if !kind.contains(&d.kind) {
                     return false;
                 }
             }
@@ -80,8 +84,8 @@ async fn index_form() -> &'static str {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let s = crate::roles::get_roles().expect("Got Good result");
-    println!("ROLES === {:?} === ROLES", s);
+    let s = crate::roles::get_subjects().expect("Got Good result");
+    println!("Subjects === {:?} === Subjects", s);
     let dt = Arc::new(Mutex::new(s));
 
     HttpServer::new(move || {
