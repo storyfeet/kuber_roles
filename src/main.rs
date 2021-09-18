@@ -2,7 +2,7 @@ use actix_web::*;
 use err_tools::*;
 use regex::Regex;
 use serde_derive::*;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
 
 mod err;
 use err::*;
@@ -11,7 +11,7 @@ mod roles;
 /// This is the shared mutable state of the App,
 /// The Mutex allows it to be updated in a separate thread
 /// (Update not implemented yet)
-type AppData = Arc<Mutex<Vec<roles::SubjectItem>>>;
+type AppData = Arc<RwLock<Vec<roles::SubjectItem>>>;
 
 /// The struct to represent the Get query Data
 #[derive(Deserialize)]
@@ -47,7 +47,7 @@ async fn role_handle(
 
     // The filtered list
     let mut f_list: Vec<roles::SubjectItem> = dt
-        .lock()
+        .read()
         .ok()
         .e_str("could not lock data")
         .as_err_response()?
@@ -108,7 +108,7 @@ async fn main() -> std::io::Result<()> {
     // Build the roles list before starting the server.
     // To Consider : Spawn a future to update the roles semi regularly
     let s = crate::roles::get_subjects().expect("Got Good result");
-    let dt = Arc::new(Mutex::new(s));
+    let dt = Arc::new(RwLock::new(s));
 
     println!("serving on 8086");
 

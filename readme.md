@@ -11,7 +11,7 @@ While the final project should be runnable in a container.  It does not currentl
 Installation
 -----------
 
-This project is built in "Rust" and therefor requires "Rust" and it's package manager "Cargo" To compile.
+This project is built in "Rust" and therefor requires "Rust" and it's package manager "Cargo" To compile. (These can be obtained from [rustup.rs](https://rustup.rs/)
 
 It also requires a kubernetes cluster running and 'kubectl' available on the system.
 
