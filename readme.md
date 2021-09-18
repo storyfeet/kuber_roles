@@ -3,8 +3,9 @@ Kuber Roles
 
 A program to read the 'roles' and 'cluster roles' from a kubernetes cluster via 'kubectl' and allow a user to see the roles certain subjects have access to via a restful HTTP API.
 
-While the final project should be runnable in a container.  The challenge I was unable to resolve in the time I had was how to give a container in a cluster access to the roles in effect on that cluster.
+It is built in Rust, as this is the language I am currently most familiar now. My most recent large Project in Go is over 5 years ago.  While I know I can relearn it quickly enough, getting to grips with Kubertnetes was a big enough challenge without relearning the popular libraries associated with Go at the same time.
 
+While the final project should be runnable in a container.  It does not currently have the ability to access the roles of the cluster it is contained within. I would need a bit more time to be able to solve that.
 
 
 Installation
@@ -14,7 +15,7 @@ This project is built in "Rust" and therefor requires "Rust" and it's package ma
 
 It also requires a kubernetes cluster running and 'kubectl' available on the system.
 
-Clone this repo and then call ```cargo install``` or ```cargo run```.
+Clone this repo and then call ```cargo install``` or ```cargo run``` from the root folder.
 
 It should take a few minutes to download it's dependencies and run.
 
@@ -38,12 +39,12 @@ The parameters you can send include
 *    namex: Filter Subjects whose name matches the given regex
 *    kind: Filter Subjects by whos type is in a Comma separeted list of Types "User,Group,ServiceAccount"
         Default is to include all.
-*    output: The type of outpuy "yaml" or "json" default "json"
-*    sort : "alpha" "length" (default no sort)
+*    output: The type of output, either "yaml" or "json". Default is "json"
+*    sort : "alpha" "length" Default is unsorted sort
 
 
 
-
+Currently the server reads the Kubernetes roles once at load, and then uses that set for the lifetime of the program.  I have used a mutex for the loaded data though, so it should not be too much work to add a server that refreshes after a given timeout.
 
 
 
