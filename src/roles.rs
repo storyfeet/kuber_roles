@@ -139,3 +139,95 @@ pub fn transpose(ko: KubeOut) -> Vec<SubjectItem> {
         })
         .collect()
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    #[test]
+    pub fn test_transpose() {
+        // Create list with two roles, one subject in both, and one subject in only one.
+        let ko: KubeOut = serde_json::from_str(
+            r##"{
+            "items":[
+            {
+                    "apiVersion": "rbac.authorization.k8s.io/v1",
+                    "kind": "ClusterRoleBinding",
+                    "metadata": {
+                        "annotations": {
+                            "rbac.authorization.kubernetes.io/autoupdate": "true"
+                        },
+                        "creationTimestamp": "2021-09-13T14:14:21Z",
+                        "labels": {
+                            "kubernetes.io/bootstrapping": "rbac-defaults"
+                        },
+                        "name": "system:service-account-issuer-discovery",
+                        "resourceVersion": "159",
+                        "uid": "afde5328-f5a7-4c5e-8c7d-e071f88676c7"
+                    },
+                    "roleRef": {
+                        "apiGroup": "rbac.authorization.k8s.io",
+                        "kind": "ClusterRole",
+                        "name": "system:service-account-issuer-discovery"
+                    },
+                    "subjects": [
+                        {
+                            "apiGroup": "rbac.authorization.k8s.io",
+                            "kind": "Group",
+                            "name": "system:serviceaccounts"
+                        }
+                    ]
+                },
+              {
+                    "apiVersion": "rbac.authorization.k8s.io/v1",
+                    "kind": "ClusterRoleBinding",
+                    "metadata": {
+                        "annotations": {
+                            "rbac.authorization.kubernetes.io/autoupdate": "true"
+                        },
+                        "creationTimestamp": "2021-09-13T14:14:20Z",
+                        "labels": {
+                            "kubernetes.io/bootstrapping": "rbac-defaults"
+                        },
+                        "name": "system:node-proxier",
+                        "resourceVersion": "153",
+                        "uid": "2bd570ab-8f27-4e38-90d1-10ffd85ec14d"
+                    },
+                    "roleRef": {
+                        "apiGroup": "rbac.authorization.k8s.io",
+                        "kind": "ClusterRole",
+                        "name": "system:node-proxier"
+                    },
+                    "subjects": [
+                        {
+                            "apiGroup": "rbac.authorization.k8s.io",
+                            "kind": "User",
+                            "name": "system:kube-proxy"
+                        },
+                        {
+                            "apiGroup": "rbac.authorization.k8s.io",
+                            "kind": "Group",
+                            "name": "system:serviceaccounts"
+                        }
+                    ]
+                }
+
+ 
+            ]
+        }"##,
+        )
+        .unwrap();
+
+        let items = transpose(ko);
+
+        assert_eq!(items[0].name, "system:kube-proxy");
+        assert_eq!(items[0].roles.len(), 1);
+        assert_eq!(items[1].name, "system:serviceaccounts");
+        assert_eq!(
+            items[1].roles,
+            [
+                "system:service-account-issuer-discovery",
+                "system:node-proxier"
+            ]
+        );
+    }
+}
